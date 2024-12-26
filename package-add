@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Check if charm/gum is installed
+if ! command -v gum &> /dev/null; then
+    echo "charm/gum is not installed. Please install it first."
+    exit 1
+fi
+
+# Check if at least one search term is provided
+if [ "$#" -lt 1 ]; then
+    echo "Usage: $0 search-term"
+    exit 1
+fi
+
+# Search for packages using dnf
+search_results=$(dnf search "$@" | awk '/^\S/ {print $1}')
+
+# Check if any packages were found
+if [ -z "$search_results" ]; then
+    echo "No packages found for search term: $@"
+    exit 1
+fi
+
+# Use charm/gum to present a selection UI
+selected_packages=$(echo "$search_results" | gum choose --no-limit)
+
+# Check if any packages were selected
+if [ -z "$selected_packages" ]; then
+    echo "No packages selected."
+    exit 1
+fi
+
+# Execute the add-package-to-os-image.sh script with the selected packages
+~/.scripts/add-package-to-os-image.sh $selected_packages
